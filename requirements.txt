@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+requests
+faster-whisper
+torch
+tqdm
+librosa
+numpy
+soundfile

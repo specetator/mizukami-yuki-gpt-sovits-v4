@@ -1,0 +1,27 @@
+# Local datasets and generated audio
+data/
+raw/
+selected/
+output/
+*.wav
+*.ogg
+*.mp3
+*.flac
+
+# Model weights. Remove these rules only if you intentionally use Git LFS.
+model/*.ckpt
+model/*.pth
+model/*.safetensors
+*.zip
+
+# Runtime/cache files
+TEMP/
+.cache/
+__pycache__/
+*.pyc
+*.log
+
+# Local configuration
+.env
+local_*.json
+local_*.yaml

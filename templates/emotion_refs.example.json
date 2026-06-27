@@ -1,0 +1,17 @@
+{
+  "neutral": {
+    "ref_audio_path": "C:\\path\\to\\refs\\selected\\neutral.wav",
+    "prompt_lang": "ja",
+    "prompt_text": "manually corrected transcript"
+  },
+  "happy": {
+    "ref_audio_path": "C:\\path\\to\\refs\\selected\\happy.wav",
+    "prompt_lang": "ja",
+    "prompt_text": "manually corrected transcript"
+  },
+  "soft": {
+    "ref_audio_path": "C:\\path\\to\\refs\\selected\\soft.wav",
+    "prompt_lang": "ja",
+    "prompt_text": "manually corrected transcript"
+  }
+}

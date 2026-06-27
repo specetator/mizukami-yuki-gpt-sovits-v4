@@ -1,0 +1,8 @@
+emotion,ref_audio_path,prompt_lang,prompt_text
+neutral,C:\path\to\refs\selected\neutral.wav,ja,
+happy,C:\path\to\refs\selected\happy.wav,ja,
+soft,C:\path\to\refs\selected\soft.wav,ja,
+sad,C:\path\to\refs\selected\sad.wav,ja,
+angry,C:\path\to\refs\selected\angry.wav,ja,
+surprised,C:\path\to\refs\selected\surprised.wav,ja,
+excited,C:\path\to\refs\selected\excited.wav,ja,
