@@ -100,7 +100,7 @@ POST http://127.0.0.1:9883/tts
 
 ## English
 
-This repository documents and packages a GPT-SoVITS v4 character voice workflow for Mizukami Yuki / Yuki: audio selection, ASR transcription, training notes, FastAPI deployment, and local mapping for seven emotion reference clips.
+This repository documents and packages a GPT-SoVITS v4 character voice workflow for Minakami Yuki / Yuki: audio selection, ASR transcription, training notes, FastAPI deployment, and local mapping for seven emotion reference clips.
 
 It includes the final v4 model weights and selected inference reference clips. It does not include the raw source audio or the full training dataset.
 
