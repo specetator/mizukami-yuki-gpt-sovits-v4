@@ -100,23 +100,42 @@ python scripts/test_tts_request.py \
 
 ## 本地情绪映射适配器
 
-如果你希望 Hermes 或上游应用只发送：
+如果你希望 Hermes 或上游应用只发送文本，并把情绪识别与参考音频选择都放在本地，可以使用 adapter 链路：
+
+```text
+Hermes / client
+  -> http://127.0.0.1:9883/tts  本地 emotion_tts_adapter.py
+  -> http://127.0.0.1:9884/tts  GPT-SoVITS 原生 API
+```
+
+adapter 规则：
+
+- 请求带 `emotion` 时，优先使用请求里的标签
+- 请求不带 `emotion` 时，用本地轻量规则从 `text` 推断情绪
+- 最终从 `emotion_refs.json` 选择参考音频和 prompt_text
+
+此时 Hermes 或上游应用可以只发送：
 
 ```json
 {
-  "emotion": "soft",
   "text": "明日も一緒にいてくれる？"
 }
 ```
 
-启动适配器：
+一键启动本地完整服务：
+
+```bat
+scripts\start_full_local_service.bat C:\path\to\GPT-SoVITS
+```
+
+或者手动启动适配器：
 
 ```bash
 python scripts/emotion_tts_adapter.py \
   --refs refs/emotion_refs.json \
-  --gpt-sovits-api http://127.0.0.1:9883 \
-  --host 127.0.0.1 \
-  --port 9893
+  --gpt-sovits-api http://127.0.0.1:9884 \
+  --host 0.0.0.0 \
+  --port 9883
 ```
 
 适配器会读取 `emotion_refs.json`，补齐 `ref_audio_path`、`prompt_text`、`prompt_lang`，再转发到 GPT-SoVITS `/tts`。
@@ -124,8 +143,8 @@ python scripts/emotion_tts_adapter.py \
 测试：
 
 ```bash
-curl -X POST http://127.0.0.1:9893/tts ^
+curl -X POST http://127.0.0.1:9883/tts ^
   -H "Content-Type: application/json" ^
-  -d "{\"emotion\":\"soft\",\"text\":\"明日も一緒にいてくれる？\"}" ^
+  -d "{\"text\":\"明日も一緒にいてくれる？\"}" ^
   --output output.wav
 ```

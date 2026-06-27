@@ -67,17 +67,16 @@ http://127.0.0.1:9883/docs
 python scripts/test_tts_request.py --api http://127.0.0.1:9883 --emotion-json refs/emotion_refs.json --emotion soft --text "明日も一緒にいてくれる？" --out output/yuki_soft.wav
 ```
 
-也可以启动本地情绪适配器，让上游只发送 `emotion` 和 `text`：
+推荐的本地情绪链路是：GPT-SoVITS 原生 API 跑在内部端口，adapter 跑在对外端口。这样上游可以只发送 `text`，由 adapter 在本地判断情绪并选择参考音频；如果上游已经发送 `emotion`，adapter 会优先使用上游给出的标签。
 
-```bash
-python scripts/emotion_tts_adapter.py --refs refs/emotion_refs.json --gpt-sovits-api http://127.0.0.1:9883 --port 9893
+```bat
+scripts\start_full_local_service.bat C:\path\to\GPT-SoVITS
 ```
 
 请求：
 
 ```json
 {
-  "emotion": "soft",
   "text": "明日も一緒にいてくれる？"
 }
 ```
@@ -85,7 +84,7 @@ python scripts/emotion_tts_adapter.py --refs refs/emotion_refs.json --gpt-sovits
 发送到：
 
 ```text
-POST http://127.0.0.1:9893/tts
+POST http://127.0.0.1:9883/tts
 ```
 
 ### 文档
@@ -161,17 +160,16 @@ Test a direct emotion reference request:
 python scripts/test_tts_request.py --api http://127.0.0.1:9883 --emotion-json refs/emotion_refs.json --emotion soft --text "明日も一緒にいてくれる？" --out output/yuki_soft.wav
 ```
 
-Optionally start the local emotion adapter:
+Recommended local emotion chain: run the raw GPT-SoVITS API on an internal port and expose the adapter port to your client. The adapter can infer an emotion locally from `text`; if the request already contains `emotion`, it uses that label instead.
 
-```bash
-python scripts/emotion_tts_adapter.py --refs refs/emotion_refs.json --gpt-sovits-api http://127.0.0.1:9883 --port 9893
+```bat
+scripts\start_full_local_service.bat C:\path\to\GPT-SoVITS
 ```
 
 Then send:
 
 ```json
 {
-  "emotion": "soft",
   "text": "明日も一緒にいてくれる？"
 }
 ```
@@ -179,7 +177,7 @@ Then send:
 to:
 
 ```text
-POST http://127.0.0.1:9893/tts
+POST http://127.0.0.1:9883/tts
 ```
 
 ### Documentation
@@ -255,17 +253,16 @@ http://127.0.0.1:9883/docs
 python scripts/test_tts_request.py --api http://127.0.0.1:9883 --emotion-json refs/emotion_refs.json --emotion soft --text "明日も一緒にいてくれる？" --out output/yuki_soft.wav
 ```
 
-必要ならローカル感情アダプターを起動します。
+推奨されるローカル感情チェーンでは、GPT-SoVITS の生 API を内部ポートで起動し、adapter を外部向けポートにします。adapter は `text` からローカルで感情を推定できます。リクエストに `emotion` が含まれる場合は、そのラベルを優先します。
 
-```bash
-python scripts/emotion_tts_adapter.py --refs refs/emotion_refs.json --gpt-sovits-api http://127.0.0.1:9883 --port 9893
+```bat
+scripts\start_full_local_service.bat C:\path\to\GPT-SoVITS
 ```
 
 次の JSON を送信します。
 
 ```json
 {
-  "emotion": "soft",
   "text": "明日も一緒にいてくれる？"
 }
 ```
@@ -273,7 +270,7 @@ python scripts/emotion_tts_adapter.py --refs refs/emotion_refs.json --gpt-sovits
 送信先：
 
 ```text
-POST http://127.0.0.1:9893/tts
+POST http://127.0.0.1:9883/tts
 ```
 
 ### ドキュメント

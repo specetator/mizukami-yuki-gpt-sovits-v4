@@ -95,7 +95,17 @@ JSON schema：
 
 ## Hermes / 本地适配层契约
 
-上游只需要提供：
+上游可以只提供文本：
+
+```json
+{
+  "text": "actual text to speak"
+}
+```
+
+此时 `scripts/emotion_tts_adapter.py` 会在本地用轻量规则推断 emotion，然后查 `emotion_refs.json`。
+
+如果上游已经有自己的情绪识别能力，也可以显式提供：
 
 ```json
 {
