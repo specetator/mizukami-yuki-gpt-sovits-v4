@@ -28,6 +28,11 @@ def load_refs(path: Path) -> dict[str, dict[str, str]]:
     refs = json.loads(path.read_text(encoding="utf-8"))
     if "neutral" not in refs:
         raise ValueError("emotion refs must include a neutral fallback")
+    base_dir = path.resolve().parent
+    for ref in refs.values():
+        audio_path = Path(ref["ref_audio_path"])
+        if not audio_path.is_absolute():
+            ref["ref_audio_path"] = str((base_dir / audio_path).resolve())
     return refs
 
 

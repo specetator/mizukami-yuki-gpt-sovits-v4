@@ -1,0 +1,37 @@
+{
+  "neutral": {
+    "ref_audio_path": "selected/neutral.wav",
+    "prompt_lang": "ja",
+    "prompt_text": "かささぎってさ、背青は黒っぽくてお腹だけが白いからつらなった群れを下から見るとまるで橋をかけたように見えるんだってさ。"
+  },
+  "happy": {
+    "ref_audio_path": "selected/happy.wav",
+    "prompt_lang": "ja",
+    "prompt_text": "やっぱり、いい女には、タバコと、屋上と、そしてひらひら服だわねー。"
+  },
+  "soft": {
+    "ref_audio_path": "selected/soft.wav",
+    "prompt_lang": "ja",
+    "prompt_text": "私たちの人生の最後、私たちの全てが終わった時に、こう言ってやるんだ。"
+  },
+  "sad": {
+    "ref_audio_path": "selected/sad.wav",
+    "prompt_lang": "ja",
+    "prompt_text": "すみません 私 私 鏡を守れなかった"
+  },
+  "angry": {
+    "ref_audio_path": "selected/angry.wav",
+    "prompt_lang": "ja",
+    "prompt_text": "あーいいわかった。とりあえず朝はチンコが立ってるから部屋の外に出て行ってください。"
+  },
+  "surprised": {
+    "ref_audio_path": "selected/surprised.wav",
+    "prompt_lang": "ja",
+    "prompt_text": "剣道部ということは、あれだね、鏡とつかさ二人とも部活出るわけですの?"
+  },
+  "excited": {
+    "ref_audio_path": "selected/excited.wav",
+    "prompt_lang": "ja",
+    "prompt_text": "それもちろん、どっかの風呂敷ばっかり広げて回収しきれないようなシナリオライターと私は違う!"
+  }
+}

@@ -14,6 +14,16 @@ model/*.pth
 model/*.safetensors
 *.zip
 
+# Published release artifacts for this repository.
+!model/yuki_v4-e15.ckpt
+!model/yuki_v4_e8_s208_l32.pth
+!model/reference_yuki_001696.wav
+!model/reference_yuki_001696.txt
+!refs/selected/
+!refs/selected/*.wav
+!refs/emotion_refs.json
+!refs/emotion_refs.csv
+
 # Runtime/cache files
 TEMP/
 .cache/

@@ -10,12 +10,15 @@
 
 ## Artifacts
 
-Expected files when weights are published:
+Published files:
 
 ```text
 model/yuki_v4-e15.ckpt
 model/yuki_v4_e8_s208_l32.pth
+model/reference_yuki_001696.wav
+model/reference_yuki_001696.txt
 configs/tts_infer_yuki_v4.yaml
+refs/selected/*.wav
 refs/emotion_refs.json
 ```
 
@@ -34,13 +37,15 @@ refs/emotion_refs.json
 
 ## Data and Rights
 
-Fill this section before publishing weights:
+Current release notes:
 
-- Source of raw audio:
-- Permission/license for source audio:
-- Permission/license for trained model redistribution:
-- Prohibited uses:
-- Contact/takedown process:
+- Source of raw audio: user-curated Yuki character clips
+- Published artifacts: final GPT-SoVITS v4 weights and selected inference reference clips
+- Raw training clips: not included
+- Full training set: not included
+- Redistribution terms: repository owner asserts they have permission to publish these artifacts
+- Prohibited uses: impersonation, deception, harassment, or use without respecting the original work and applicable rights
+- Contact/takedown process: open a GitHub issue or contact the repository owner
 
 ## Safety Notes
 

@@ -16,15 +16,19 @@ def main() -> None:
     parser.add_argument("--split-method", default="cut5")
     args = parser.parse_args()
 
-    refs = json.loads(Path(args.emotion_json).read_text(encoding="utf-8"))
+    refs_path = Path(args.emotion_json)
+    refs = json.loads(refs_path.read_text(encoding="utf-8"))
     if args.emotion not in refs:
         raise SystemExit(f"Emotion {args.emotion!r} not found. Available: {', '.join(refs)}")
     ref = refs[args.emotion]
+    ref_audio_path = Path(ref["ref_audio_path"])
+    if not ref_audio_path.is_absolute():
+        ref_audio_path = (refs_path.resolve().parent / ref_audio_path).resolve()
 
     body = {
         "text": args.text,
         "text_lang": args.text_lang,
-        "ref_audio_path": ref["ref_audio_path"],
+        "ref_audio_path": str(ref_audio_path),
         "prompt_text": ref["prompt_text"],
         "prompt_lang": ref.get("prompt_lang", args.text_lang),
         "text_split_method": args.split_method,

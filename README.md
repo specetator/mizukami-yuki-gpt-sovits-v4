@@ -1,21 +1,32 @@
 # Yuki GPT-SoVITS v4 Workflow
 
-这个仓库整理了一套从角色原始音频筛选、转写、GPT-SoVITS v4 训练、模型打包，到 FastAPI 部署和本地情绪映射的完整流程。它来自一次 yuki 声音训练实践，但脚本都尽量做成了可复用模板。
+This repository documents and packages a GPT-SoVITS v4 character voice workflow for Yuki: audio selection, ASR, training notes, FastAPI deployment, and local emotion-reference mapping.
 
-> 注意：本仓库默认不包含原始音频、训练集、参考音频和模型权重。公开发布前请确认训练素材、角色声音、模型权重和生成音频的授权范围。
+It includes the final v4 model weights and selected inference reference clips. It does not include the raw source audio or the full training dataset.
 
-## 当前 yuki v4 记录
+## Included Artifacts
 
-- GPT-SoVITS 版本：v4 推理配置，基于 `GPT-SoVITS-v2pro-20250604` 工作区
-- 训练集：从 `yuki_voice/*.ogg` 中按音频质量筛选 Top 50
-- SoVITS v4 LoRA 权重：`yuki_v4_e8_s208_l32.pth`
-- GPT 权重：`yuki_v4-e15.ckpt`
-- 推理配置：`configs/tts_infer_yuki_v4.yaml`
-- API 端口：`9883`
-- 语言：`ja`
-- 情绪标签：`neutral`, `happy`, `soft`, `sad`, `angry`, `surprised`, `excited`
+- `model/yuki_v4-e15.ckpt` - GPT semantic model weights
+- `model/yuki_v4_e8_s208_l32.pth` - SoVITS v4 LoRA weights
+- `model/reference_yuki_001696.wav` - basic inference reference clip
+- `model/reference_yuki_001696.txt` - transcript for the basic reference clip
+- `configs/tts_infer_yuki_v4.yaml` - GPT-SoVITS v4 inference config
+- `refs/selected/*.wav` - one final reference clip per emotion
+- `refs/emotion_refs.json` - local emotion-to-reference mapping
 
-## 仓库结构
+Large model and audio artifacts are tracked with Git LFS.
+
+## Yuki v4 Run Notes
+
+- GPT-SoVITS version: v4 inference config, trained in a `GPT-SoVITS-v2pro-20250604` workspace
+- Dataset: top 50 clips selected from `yuki_voice/*.ogg`
+- SoVITS v4 LoRA: `yuki_v4_e8_s208_l32.pth`
+- GPT weights: `yuki_v4-e15.ckpt`
+- API port used locally: `9883`
+- Language: Japanese (`ja`)
+- Emotion labels: `neutral`, `happy`, `soft`, `sad`, `angry`, `surprised`, `excited`
+
+## Repository Structure
 
 ```text
 .
@@ -27,6 +38,22 @@
     03_fastapi_deploy.md
     04_emotion_mapping.md
     05_release_checklist.md
+  model/
+    yuki_v4-e15.ckpt
+    yuki_v4_e8_s208_l32.pth
+    reference_yuki_001696.wav
+    reference_yuki_001696.txt
+  refs/
+    selected/
+      neutral.wav
+      happy.wav
+      soft.wav
+      sad.wav
+      angry.wav
+      surprised.wav
+      excited.wav
+    emotion_refs.json
+    emotion_refs.csv
   scripts/
     emotion_tts_adapter.py
     select_voice.ps1
@@ -39,78 +66,83 @@
   templates/
     emotion_prompt_text_template.csv
     emotion_refs.example.json
-  model/
-    README.md
-  refs/
-    README.md
-  MODEL_CARD.md
 ```
 
-## 快速开始
+## Requirements
 
-1. 安装并确认 GPT-SoVITS v4 能正常启动。
-2. 把本仓库 `configs/tts_infer_yuki_v4.yaml` 复制到 GPT-SoVITS 根目录下的 `GPT_SoVITS/configs/`。
-3. 把模型权重放到 GPT-SoVITS 根目录：
+- Git LFS
+- GPT-SoVITS v4 runtime
+- CUDA GPU recommended
+- Python dependencies from `requirements.txt` for helper scripts
+
+Install Git LFS before cloning:
+
+```bash
+git lfs install
+git clone https://github.com/specetator/mizukami-yuki-gpt-sovits-v4.git
+```
+
+## Quick Start
+
+1. Install and verify GPT-SoVITS v4.
+2. Copy the model files into your GPT-SoVITS root:
 
 ```text
-model/yuki_v4-e15.ckpt              -> GPT_weights_v4/yuki_v4-e15.ckpt
-model/yuki_v4_e8_s208_l32.pth       -> SoVITS_weights_v4/yuki_v4_e8_s208_l32.pth
+model/yuki_v4-e15.ckpt        -> GPT_weights_v4/yuki_v4-e15.ckpt
+model/yuki_v4_e8_s208_l32.pth -> SoVITS_weights_v4/yuki_v4_e8_s208_l32.pth
+configs/tts_infer_yuki_v4.yaml -> GPT_SoVITS/configs/tts_infer_yuki_v4.yaml
 ```
 
-4. 从 GPT-SoVITS 根目录启动 API：
-
-```bat
-scripts\start_api_from_gpt_sovits_root.bat
-```
-
-或者手动运行：
+3. Start the API from the GPT-SoVITS root:
 
 ```bat
 runtime\python.exe -u -I api_v2.py -a 0.0.0.0 -p 9883 -c GPT_SoVITS/configs/tts_infer_yuki_v4.yaml
 ```
 
-5. 打开：
+4. Open the docs:
 
 ```text
 http://127.0.0.1:9883/docs
 ```
 
-6. 用参考音频调用 `/tts`：
+5. Test a direct emotion reference request:
 
 ```bash
 python scripts/test_tts_request.py --api http://127.0.0.1:9883 --emotion-json refs/emotion_refs.json --emotion soft --text "明日も一緒にいてくれる？" --out output/yuki_soft.wav
 ```
 
-7. 可选：启动本地情绪映射适配器，让上游只传 `emotion` 和 `text`：
+6. Optional: start the local emotion adapter:
 
 ```bash
 python scripts/emotion_tts_adapter.py --refs refs/emotion_refs.json --gpt-sovits-api http://127.0.0.1:9883 --port 9893
 ```
 
-然后请求：
+Then send:
+
+```json
+{
+  "emotion": "soft",
+  "text": "明日も一緒にいてくれる？"
+}
+```
+
+to:
 
 ```text
 POST http://127.0.0.1:9893/tts
 ```
 
-## 完整流程
+## Workflow Docs
 
-按顺序阅读：
+- [Audio selection](docs/01_audio_selection.md)
+- [GPT-SoVITS v4 training](docs/02_training_v4.md)
+- [FastAPI deployment](docs/03_fastapi_deploy.md)
+- [Local emotion mapping](docs/04_emotion_mapping.md)
+- [Release checklist](docs/05_release_checklist.md)
 
-- [音频筛选](docs/01_audio_selection.md)
-- [GPT-SoVITS v4 训练](docs/02_training_v4.md)
-- [FastAPI 部署](docs/03_fastapi_deploy.md)
-- [本地情绪映射](docs/04_emotion_mapping.md)
-- [开源发布检查](docs/05_release_checklist.md)
+## Notes
 
-## 关键约定
-
-- 训练列表格式：`wav_path|speaker|lang|text`
-- yuki 语言：`JA` / API 中使用 `ja`
-- 参考音频推荐：mono、32000 Hz、PCM s16le wav
-- `ref_audio_path` 必须是运行 GPT-SoVITS API 的机器能访问的本地路径
-- 远程调用时只暴露 API 地址，不要把 Windows 本地路径发给客户端让它读取
-
-## 授权提醒
-
-GPT-SoVITS 本体、预训练模型、训练素材、角色声音和你训练出的权重可能分别受不同协议约束。公开仓库建议默认只开源流程脚本和文档；如需发布权重，请使用 Git LFS，并在 `MODEL_CARD.md` 中写明数据来源、授权、限制和禁止用途。
+- `0.0.0.0` is a listening address. Use `127.0.0.1` locally.
+- `ref_audio_path` must exist on the machine running GPT-SoVITS.
+- The provided emotion JSON uses repository-relative paths; the Python helper scripts resolve them to absolute paths before calling GPT-SoVITS.
+- Check the GPT-SoVITS license, pretrained model licenses, and rights for any training data before redistributing derived artifacts.
