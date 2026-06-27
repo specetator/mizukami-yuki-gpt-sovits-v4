@@ -1,23 +1,33 @@
-# 03. FastAPI 部署
+# 03. FastAPI Deployment
 
-目标：让 GPT-SoVITS v4 模型通过 `api_v2.py` 以 HTTP API 方式提供 TTS。
+This project supports two API layers:
 
-## 放置模型
+- Raw GPT-SoVITS API: receives complete `/tts` requests with `ref_audio_path` and `prompt_text`.
+- Local TTS router: receives `emotion + text`, maps the emotion to local reference audio, and forwards a complete request to GPT-SoVITS.
 
-把权重复制到 GPT-SoVITS 根目录：
+The recommended setup is option B:
 
 ```text
-model/yuki_v4-e15.ckpt        -> GPT_weights_v4/yuki_v4-e15.ckpt
-model/yuki_v4_e8_s208_l32.pth -> SoVITS_weights_v4/yuki_v4_e8_s208_l32.pth
+AI agent / Hermes
+  -> understands emotion with the main model
+  -> sends emotion + text
+  -> http://127.0.0.1:9883/tts  local_tts_router.py
+  -> http://127.0.0.1:9884/tts  raw GPT-SoVITS API
 ```
 
-把配置复制到：
+`local_tts_router.py` does not provide large-model emotion understanding. It only routes a provided emotion label to local reference audio and `prompt_text`.
+
+## Place Model Files
+
+Copy the model files into your GPT-SoVITS root:
 
 ```text
+model/yuki_v4-e15.ckpt         -> GPT_weights_v4/yuki_v4-e15.ckpt
+model/yuki_v4_e8_s208_l32.pth  -> SoVITS_weights_v4/yuki_v4_e8_s208_l32.pth
 configs/tts_infer_yuki_v4.yaml -> GPT_SoVITS/configs/tts_infer_yuki_v4.yaml
 ```
 
-配置核心字段：
+Key config fields:
 
 ```yaml
 custom:
@@ -28,58 +38,27 @@ custom:
   vits_weights_path: SoVITS_weights_v4/yuki_v4_e8_s208_l32.pth
 ```
 
-## 端口检查
+## Raw GPT-SoVITS API
 
-本次 yuki v4 使用 `9883`：
-
-```powershell
-python -c "import socket; s=socket.socket(); s.bind(('0.0.0.0',9883)); print('free'); s.close()"
-```
-
-如果提示端口占用，换一个端口，并同步更新启动脚本、FRP、本地客户端配置。
-
-## 启动 API
-
-在 GPT-SoVITS 根目录运行：
+Start the raw API from the GPT-SoVITS root:
 
 ```bat
-runtime\python.exe -u -I api_v2.py -a 0.0.0.0 -p 9883 -c GPT_SoVITS/configs/tts_infer_yuki_v4.yaml
+runtime\python.exe -u -I api_v2.py -a 0.0.0.0 -p 9884 -c GPT_SoVITS/configs/tts_infer_yuki_v4.yaml
 ```
 
-或把 `scripts/start_api_from_gpt_sovits_root.bat` 放进 GPT-SoVITS 根目录的 `scripts/` 下运行。
-
-启动成功后应看到类似：
+Open:
 
 ```text
-Uvicorn running on http://0.0.0.0:9883
+http://127.0.0.1:9884/docs
 ```
 
-本机打开：
-
-```text
-http://127.0.0.1:9883/docs
-```
-
-注意：`0.0.0.0` 是监听地址，不是浏览器访问地址。本机访问用 `127.0.0.1`，局域网访问用服务器 IP。
-
-## 测试 TTS
-
-```bash
-python scripts/test_tts_request.py \
-  --api http://127.0.0.1:9883 \
-  --emotion-json refs/emotion_refs.json \
-  --emotion neutral \
-  --text "今日は少しだけ、あなたのそばにいてもいい？" \
-  --out output/yuki_neutral.wav
-```
-
-请求体核心字段：
+The raw API requires complete TTS fields:
 
 ```json
 {
   "text": "actual text",
   "text_lang": "ja",
-  "ref_audio_path": "C:\\path\\to\\neutral.wav",
+  "ref_audio_path": "C:\\path\\to\\soft.wav",
   "prompt_lang": "ja",
   "prompt_text": "reference transcript",
   "media_type": "wav",
@@ -87,64 +66,47 @@ python scripts/test_tts_request.py \
 }
 ```
 
-## Sakura FRP / Hermes
+## Local TTS Router
 
-如果从外部服务调用本机 API：
-
-- FRP local port 必须等于 API 端口，本次是 `9883`
-- `ref_audio_path` 仍然是 API 机器上的本地路径
-- 外部客户端只需要发送 `emotion` 和 `text`
-- 本地适配层负责把 emotion 映射为 `ref_audio_path`、`prompt_text`
-
-不要让远程客户端自行读取 Windows 本地参考音频路径。
-
-## 本地情绪映射适配器
-
-如果你希望 Hermes 或上游应用只发送文本，并把情绪识别与参考音频选择都放在本地，可以使用 adapter 链路：
-
-```text
-Hermes / client
-  -> http://127.0.0.1:9883/tts  本地 emotion_tts_adapter.py
-  -> http://127.0.0.1:9884/tts  GPT-SoVITS 原生 API
-```
-
-adapter 规则：
-
-- 请求带 `emotion` 时，优先使用请求里的标签
-- 请求不带 `emotion` 时，用本地轻量规则从 `text` 推断情绪
-- 最终从 `emotion_refs.json` 选择参考音频和 prompt_text
-
-此时 Hermes 或上游应用可以只发送：
-
-```json
-{
-  "text": "明日も一緒にいてくれる？"
-}
-```
-
-一键启动本地完整服务：
+Start the full local service:
 
 ```bat
 scripts\start_full_local_service.bat C:\path\to\GPT-SoVITS
 ```
 
-或者手动启动适配器：
+Or start the router manually after the raw API is already running:
 
 ```bash
-python scripts/emotion_tts_adapter.py \
+python scripts/local_tts_router.py \
   --refs refs/emotion_refs.json \
   --gpt-sovits-api http://127.0.0.1:9884 \
   --host 0.0.0.0 \
   --port 9883
 ```
 
-适配器会读取 `emotion_refs.json`，补齐 `ref_audio_path`、`prompt_text`、`prompt_lang`，再转发到 GPT-SoVITS `/tts`。
+Your AI agent / Hermes should call the router:
 
-测试：
+```json
+{
+  "emotion": "soft",
+  "text": "明日も一緒にいてくれる？"
+}
+```
+
+Test with curl:
 
 ```bash
 curl -X POST http://127.0.0.1:9883/tts ^
   -H "Content-Type: application/json" ^
-  -d "{\"text\":\"明日も一緒にいてくれる？\"}" ^
+  -d "{\"emotion\":\"soft\",\"text\":\"明日も一緒にいてくれる？\"}" ^
   --output output.wav
 ```
+
+The router reads `refs/emotion_refs.json`, fills `ref_audio_path`, `prompt_text`, and `prompt_lang`, then forwards the request to the raw GPT-SoVITS API.
+
+## Hermes / FRP Notes
+
+- Point Hermes or your client at the router port, usually `9883`.
+- Keep the raw GPT-SoVITS API as an internal service, usually `9884`.
+- `ref_audio_path` remains a path on the machine running GPT-SoVITS.
+- Remote clients should not read Windows local paths directly.

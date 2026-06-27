@@ -67,7 +67,7 @@ http://127.0.0.1:9883/docs
 python scripts/test_tts_request.py --api http://127.0.0.1:9883 --emotion-json refs/emotion_refs.json --emotion soft --text "明日も一緒にいてくれる？" --out output/yuki_soft.wav
 ```
 
-推荐的本地情绪链路是：GPT-SoVITS 原生 API 跑在内部端口，adapter 跑在对外端口。这样上游可以只发送 `text`，由 adapter 在本地判断情绪并选择参考音频；如果上游已经发送 `emotion`，adapter 会优先使用上游给出的标签。
+推荐的本地链路是方案 B：AI agent / Hermes 负责用大模型理解文本情绪并输出 `emotion`，本地 router 只负责把 `emotion` 映射为参考音频、prompt_text，然后转发给 GPT-SoVITS。
 
 ```bat
 scripts\start_full_local_service.bat C:\path\to\GPT-SoVITS
@@ -77,6 +77,7 @@ scripts\start_full_local_service.bat C:\path\to\GPT-SoVITS
 
 ```json
 {
+  "emotion": "soft",
   "text": "明日も一緒にいてくれる？"
 }
 ```
@@ -160,7 +161,7 @@ Test a direct emotion reference request:
 python scripts/test_tts_request.py --api http://127.0.0.1:9883 --emotion-json refs/emotion_refs.json --emotion soft --text "明日も一緒にいてくれる？" --out output/yuki_soft.wav
 ```
 
-Recommended local emotion chain: run the raw GPT-SoVITS API on an internal port and expose the adapter port to your client. The adapter can infer an emotion locally from `text`; if the request already contains `emotion`, it uses that label instead.
+Recommended local chain, option B: let your AI agent / Hermes use the main language model to understand emotion and send `emotion`; the local router only maps that emotion to reference audio and prompt_text, then forwards the request to GPT-SoVITS.
 
 ```bat
 scripts\start_full_local_service.bat C:\path\to\GPT-SoVITS
@@ -170,6 +171,7 @@ Then send:
 
 ```json
 {
+  "emotion": "soft",
   "text": "明日も一緒にいてくれる？"
 }
 ```
@@ -253,7 +255,7 @@ http://127.0.0.1:9883/docs
 python scripts/test_tts_request.py --api http://127.0.0.1:9883 --emotion-json refs/emotion_refs.json --emotion soft --text "明日も一緒にいてくれる？" --out output/yuki_soft.wav
 ```
 
-推奨されるローカル感情チェーンでは、GPT-SoVITS の生 API を内部ポートで起動し、adapter を外部向けポートにします。adapter は `text` からローカルで感情を推定できます。リクエストに `emotion` が含まれる場合は、そのラベルを優先します。
+推奨構成は案 B です。AI agent / Hermes が大規模言語モデルで感情を理解して `emotion` を送信し、ローカル router はその `emotion` をリファレンス音声と prompt_text に変換して GPT-SoVITS へ転送します。
 
 ```bat
 scripts\start_full_local_service.bat C:\path\to\GPT-SoVITS
@@ -263,6 +265,7 @@ scripts\start_full_local_service.bat C:\path\to\GPT-SoVITS
 
 ```json
 {
+  "emotion": "soft",
   "text": "明日も一緒にいてくれる？"
 }
 ```
@@ -312,7 +315,7 @@ POST http://127.0.0.1:9883/tts
     emotion_refs.json
     emotion_refs.csv
   scripts/
-    emotion_tts_adapter.py
+    local_tts_router.py
     select_voice.ps1
     convert_selected_to_wav16k.ps1
     transcribe_faster_whisper.py

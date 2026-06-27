@@ -1,10 +1,19 @@
-# 04. 本地情绪映射
+# 04. Emotion Reference Mapping
 
-目标：为每个情绪选一条稳定参考音频，并生成 `emotion_refs.json`，让本地 TTS 适配层按 emotion 选择参考。
+The goal is to choose one stable reference clip for each emotion and generate `emotion_refs.json`.
 
-## 情绪标签
+In the recommended option B architecture:
 
-固定使用：
+- AI agent / Hermes performs large-model emotion understanding.
+- The agent sends `emotion + text`.
+- `scripts/local_tts_router.py` maps `emotion` to local reference audio and `prompt_text`.
+- GPT-SoVITS receives a complete `/tts` request.
+
+`local_tts_router.py` is a router, not an emotion-recognition model.
+
+## Emotion Labels
+
+Use these stable labels:
 
 ```text
 neutral   normal conversation
@@ -16,9 +25,9 @@ surprised surprised, questioning, rising tone
 excited   high-energy, thrilled
 ```
 
-## 生成候选
+## Candidate Selection
 
-先用已校对的训练 list 生成候选目录：
+You can generate candidate folders from a corrected GPT-SoVITS list:
 
 ```bash
 python scripts/classify_emotion_refs.py \
@@ -26,7 +35,7 @@ python scripts/classify_emotion_refs.py \
   --out-dir F:\AI_audio\yuki_selected_50\emotion_reference_candidates
 ```
 
-输出：
+This creates:
 
 ```text
 emotion_reference_candidates/
@@ -41,32 +50,29 @@ emotion_reference_candidates/
   summary.txt
 ```
 
-这个脚本只是候选排序，不是最终判断。最终必须人工听音频。
+This script only helps sort candidates. The final choice should be made by listening manually.
 
-## 人工选择
+## Final Reference Rules
 
-每个情绪选一个最稳定的 clip：
+Choose one final clip per emotion:
 
-- 音色清楚，背景干净
-- 情绪表达明确但不过火
-- 2 到 8 秒更容易稳定
-- 文本能准确转写
-- 避免哭喊、尖叫、重音效、长沉默
+- clear voice, minimal background noise
+- stable character tone
+- clear emotional color without being too extreme
+- usually 2 to 8 seconds
+- prompt text can be transcribed accurately
 
-把选择结果填入：
+Avoid clips with heavy effects, overlapping voices, screaming, crying, or long silence.
+
+## Generate `emotion_refs.json`
+
+Fill:
 
 ```text
 templates/emotion_prompt_text_template.csv
 ```
 
-示例：
-
-```csv
-emotion,ref_audio_path,prompt_lang,prompt_text
-soft,F:\AI_audio\refs_source\soft.wav,ja,ここに手で直した日本語テキスト
-```
-
-## 生成 refs
+Then run:
 
 ```bash
 python scripts/build_emotion_refs.py \
@@ -74,38 +80,37 @@ python scripts/build_emotion_refs.py \
   --out-dir refs
 ```
 
-脚本会：
+This produces:
 
-- 将每个参考转为 mono 32000 Hz wav
-- 写入 `refs/selected/<emotion>.wav`
-- 生成 `refs/emotion_refs.json`
-- 生成 `refs/emotion_refs.csv`
+```text
+refs/
+  selected/
+    neutral.wav
+    happy.wav
+    soft.wav
+    sad.wav
+    angry.wav
+    surprised.wav
+    excited.wav
+  emotion_refs.json
+  emotion_refs.csv
+```
 
-JSON schema：
+JSON schema:
 
 ```json
 {
   "soft": {
-    "ref_audio_path": "F:\\AI_audio\\...\\refs\\selected\\soft.wav",
+    "ref_audio_path": "selected/soft.wav",
     "prompt_lang": "ja",
-    "prompt_text": "手动校对后的参考音频文本"
+    "prompt_text": "reference transcript"
   }
 }
 ```
 
-## Hermes / 本地适配层契约
+## Router Contract
 
-上游可以只提供文本：
-
-```json
-{
-  "text": "actual text to speak"
-}
-```
-
-此时 `scripts/emotion_tts_adapter.py` 会在本地用轻量规则推断 emotion，然后查 `emotion_refs.json`。
-
-如果上游已经有自己的情绪识别能力，也可以显式提供：
+The AI agent / Hermes sends:
 
 ```json
 {
@@ -114,13 +119,13 @@ JSON schema：
 }
 ```
 
-本地 TTS 适配层读取 `emotion_refs.json`，组装 GPT-SoVITS `/tts` 请求：
+The local router sends GPT-SoVITS:
 
 ```json
 {
   "text": "actual text to speak",
   "text_lang": "ja",
-  "ref_audio_path": "F:\\AI_audio\\...\\soft.wav",
+  "ref_audio_path": "F:\\AI_audio\\...\\refs\\selected\\soft.wav",
   "prompt_lang": "ja",
   "prompt_text": "reference audio transcript",
   "media_type": "wav",
@@ -128,15 +133,6 @@ JSON schema：
 }
 ```
 
-本仓库提供了 `scripts/emotion_tts_adapter.py`，它就是这个本地适配层的最小实现。
+## Encoding Notes
 
-## 编码注意
-
-现有历史文件中出现过日文 mojibake 乱码。公开流程里建议：
-
-- 所有 `.list`、`.csv`、`.json` 使用 UTF-8 或 UTF-8 with BOM
-- Windows PowerShell 控制台先执行 `chcp 65001`
-- ASR 输出后必须人工打开校对
-- 不要把乱码 prompt_text 写入 `emotion_refs.json`
-
-`prompt_text` 的准确性会直接影响 GPT-SoVITS 的音色和发音稳定性。
+Use UTF-8 for `.list`, `.csv`, and `.json` files. Manually correct ASR output before using it as `prompt_text`; incorrect prompt text can reduce GPT-SoVITS stability and voice quality.
