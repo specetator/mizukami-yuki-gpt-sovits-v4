@@ -38,7 +38,7 @@ Languages: [中文](#中文) | [English](#english) | [日本語](#日本語)
 
 ```bash
 git lfs install
-git clone https://github.com/specetator/mizukami-yuki-gpt-sovits-v4.git
+git clone https://github.com/specetator/minakami-yuki-gpt-sovits-v4.git
 ```
 
 把文件复制到 GPT-SoVITS 根目录：
@@ -132,7 +132,7 @@ Install Git LFS before cloning:
 
 ```bash
 git lfs install
-git clone https://github.com/specetator/mizukami-yuki-gpt-sovits-v4.git
+git clone https://github.com/specetator/minakami-yuki-gpt-sovits-v4.git
 ```
 
 Copy the files into your GPT-SoVITS root:
@@ -226,7 +226,7 @@ POST http://127.0.0.1:9883/tts
 
 ```bash
 git lfs install
-git clone https://github.com/specetator/mizukami-yuki-gpt-sovits-v4.git
+git clone https://github.com/specetator/minakami-yuki-gpt-sovits-v4.git
 ```
 
 GPT-SoVITS のルートディレクトリにファイルをコピーします。
